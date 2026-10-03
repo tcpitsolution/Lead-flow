@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0c29"/>
+      <stop offset="50%" style="stop-color:#302b63"/>
+      <stop offset="100%" style="stop-color:#24243e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="80" y="260" width="160" height="6" rx="3" fill="url(#accent)" opacity="0.8"/>
+  <text x="80" y="220" font-family="system-ui, sans-serif" font-size="72" font-weight="700" fill="white">LeadFlow</text>
+  <text x="80" y="320" font-family="system-ui, sans-serif" font-size="32" fill="rgba(255,255,255,0.75)">Simple CRM for Lead Management</text>
+  <text x="80" y="370" font-family="system-ui, sans-serif" font-size="32" fill="rgba(255,255,255,0.75)">and Sales Tracking</text>
+  <rect x="80" y="430" width="220" height="52" rx="10" fill="url(#accent)"/>
+  <text x="190" y="463" font-family="system-ui, sans-serif" font-size="20" font-weight="600" fill="white" text-anchor="middle">Start for free</text>
+  <circle cx="950" cy="315" r="200" fill="rgba(124,58,237,0.12)"/>
+  <circle cx="1050" cy="200" r="120" fill="rgba(79,70,229,0.1)"/>
+</svg>

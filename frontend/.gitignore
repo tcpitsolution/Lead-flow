@@ -1,0 +1,58 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build files
+dist/
+dist-ssr/
+build/
+**/dist/
+**/build/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Vite
+.vite/
+
+# Uploads / user files
+uploads/
+**/uploads/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Visual Studio
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp

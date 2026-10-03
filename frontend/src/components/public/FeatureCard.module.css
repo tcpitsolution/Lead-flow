@@ -1,0 +1,31 @@
+.card {
+  padding: 28px 24px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.25s, transform 0.25s;
+}
+
+.card:hover {
+  border-color: rgba(140, 114, 255, 0.4);
+  transform: translateY(-4px);
+}
+
+.icon {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.65;
+}

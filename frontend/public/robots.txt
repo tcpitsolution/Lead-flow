@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /features
+Allow: /pricing
+Allow: /testimonials
+Allow: /blogs
+Allow: /contact
+
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+
+Sitemap: https://leadflow.tcpitsolution.in/sitemap.xml

@@ -1,0 +1,168 @@
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+
+button.nav-cta{border:0;cursor:pointer;font:inherit;font-weight:600}
+
+.container {
+  max-width: 1126px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logoIcon {
+  font-size: 22px;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: -0.5px;
+}
+
+.links {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 4px;
+  flex: 1;
+}
+
+.link {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+}
+
+.link:hover {
+  color: var(--text-h);
+  background: var(--accent-bg);
+}
+
+.active {
+  color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.loginBtn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text-h);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.loginBtn:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.signupBtn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.signupBtn:hover {
+  opacity: 0.88;
+}
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: auto;
+}
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text-h);
+  border-radius: 2px;
+  transition: 0.2s;
+}
+
+@media (max-width: 768px) {
+  .links {
+    display: none;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    flex-direction: column;
+    padding: 12px 24px 16px;
+    gap: 4px;
+    z-index: 99;
+  }
+
+  .links.open {
+    display: flex;
+  }
+
+  .links.open + .actions {
+    display: none;
+  }
+
+  .actions {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+    gap: 16px;
+  }
+
+  .logoText {
+    font-size: 16px;
+  }
+}
