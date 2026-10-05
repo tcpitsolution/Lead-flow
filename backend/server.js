@@ -22,6 +22,7 @@ connectDB();
 const allowedOrigins = [
   ...(process.env.ALLOWED_ORIGINS || "").split(","),
   process.env.CLIENT_URL || "",
+  "https://leadflowcrm.site",
   "http://localhost:5173",
   "http://localhost:3000",
 ]
