@@ -17,7 +17,33 @@ app.set("trust proxy", 1);
 
 connectDB();
 
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
+// ---------- CORS ----------
+// Allowed origins: ALLOWED_ORIGINS (comma separated) + CLIENT_URL (purana variable bhi chalega)
+const allowedOrigins = [
+  ...(process.env.ALLOWED_ORIGINS || "").split(","),
+  process.env.CLIENT_URL || "",
+  "http://localhost:5173",
+  "http://localhost:3000",
+]
+  .map((o) => o.trim().replace(/\/$/, "")) // space aur last ka "/" hata do
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Postman, curl, payment webhooks (server-to-server) mein origin nahi hota
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.log("CORS blocked:", origin);
+      return callback(null, false);
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+// ---------- /CORS ----------
+
 app.use(express.json({ limit: "500kb" }));
 
 app.get("/", (req, res) => {
