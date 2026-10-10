@@ -1,0 +1,158 @@
+/* ── CLIENT FINDER THEME VARS (paste at the END of Dashboard.css) ── */
+:root, [data-theme="dark"] {
+  --cf-card-bg: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+  --cf-card-border: rgba(255,255,255,0.09);
+  --cf-card-shadow: none;
+  --cf-field-bg: rgba(255,255,255,0.04);
+  --cf-field-border: rgba(255,255,255,0.1);
+  --cf-btn-border: rgba(255,255,255,0.15);
+  --cf-btn-bg: rgba(255,255,255,0.06);
+  --cf-check-border: rgba(255,255,255,0.28);
+  --cf-summary-bg: rgba(255,255,255,0.03);
+  --cf-summary-border: rgba(255,255,255,0.08);
+  --cf-quick-on: #7fb8ff;
+  --cf-danger: #ff8a8a;
+  --cf-scheme: dark;
+}
+
+[data-theme="light"] {
+  --cf-card-bg: #ffffff;
+  --cf-card-border: rgba(15,23,42,0.12);
+  --cf-card-shadow: 0 1px 3px rgba(15,23,42,0.08), 0 8px 24px rgba(15,23,42,0.05);
+  --cf-field-bg: #ffffff;
+  --cf-field-border: rgba(15,23,42,0.25);
+  --cf-btn-border: rgba(15,23,42,0.22);
+  --cf-btn-bg: #ffffff;
+  --cf-check-border: rgba(15,23,42,0.35);
+  --cf-summary-bg: #ffffff;
+  --cf-summary-border: rgba(15,23,42,0.12);
+  --cf-quick-on: #2563eb;
+  --cf-danger: #dc2626;
+  --cf-scheme: light;
+}
+
+[data-theme="light"] .nx-sidebar { box-shadow: 1px 0 8px rgba(15,23,42,0.06); }
+[data-theme="light"] .nx-nav-btn { opacity: 1; }
+
+[data-theme="light"] .nx-main select:focus,
+[data-theme="light"] .nx-main input:focus {
+  outline: none;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+/* ── SEARCH LOADING POPUP ── */
+.cf-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 14, 39, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: wait;
+  animation: cf-fade-in 0.2s ease;
+}
+
+[data-theme="light"] .cf-loading-overlay {
+  background: rgba(240, 242, 248, 0.55);
+}
+
+.cf-loading-modal {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  padding: 32px 28px 28px;
+  border-radius: 20px;
+  background: var(--bg-sidebar, #fff);
+  border: 1px solid var(--cf-card-border);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  animation: cf-pop-in 0.25s ease;
+}
+
+[data-theme="light"] .cf-loading-modal {
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+}
+
+.cf-loading-stage {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 18px;
+}
+
+.cf-loading-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(116, 143, 252, 0.18);
+  border-top-color: #4dabf7;
+  animation: cf-spin 1.2s linear infinite;
+}
+
+.cf-loading-orbit {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.cf-loading-icon {
+  display: block;
+  font-size: 30px;
+  line-height: 1;
+  animation: cf-orbit 1.8s linear infinite;
+}
+
+.cf-loading-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.cf-loading-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+@keyframes cf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* magnifier moves in a small circle, like it is searching */
+@keyframes cf-orbit {
+  from { transform: rotate(0deg) translateX(10px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(10px) rotate(-360deg); }
+}
+
+@keyframes cf-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes cf-pop-in {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-loading-ring,
+  .cf-loading-icon { animation-duration: 4s; }
+}
+
+/* ── POPUP COLOURS (optional, popup has fallbacks) ── */
+:root, [data-theme="dark"] {
+  --cf-overlay: rgba(10, 14, 39, 0.55);
+  --cf-modal-bg: #131729;
+}
+[data-theme="light"] {
+  --cf-overlay: rgba(226, 232, 245, 0.6);
+  --cf-modal-bg: #ffffff;
+}

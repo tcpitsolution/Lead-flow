@@ -1102,3 +1102,71 @@ select.nx-pill option { background: var(--bg-select-opt); color: var(--text); }
   background: var(--bg-select-opt);
   color: var(--text);
 }
+/* ── LIGHT THEME POLISH ── */
+[data-theme="light"] .nx-stats-row,
+[data-theme="light"] .nx-deal-card,
+[data-theme="light"] .nx-forecast-card,
+[data-theme="light"] .nx-intel-card,
+[data-theme="light"] .nx-perf-card,
+[data-theme="light"] .nx-timeline-card,
+[data-theme="light"] .nx-add-form,
+[data-theme="light"] .nx-table-wrap {
+  box-shadow: 0 1px 3px rgba(15,23,42,0.08), 0 8px 24px rgba(15,23,42,0.05);
+}
+
+[data-theme="light"] .nx-field input,
+[data-theme="light"] .nx-field select,
+[data-theme="light"] .nx-filter-btn {
+  border-width: 1.5px;
+  border-radius: 10px;
+}
+
+[data-theme="light"] .nx-field input:focus,
+[data-theme="light"] .nx-field select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+[data-theme="light"] .nx-sidebar {
+  box-shadow: 1px 0 8px rgba(15,23,42,0.06);
+}
+
+
+/* ── CLIENT FINDER THEME VARS ── */
+:root, [data-theme="dark"] {
+  --cf-card-bg: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+  --cf-card-border: rgba(255,255,255,0.09);
+  --cf-field-bg: rgba(255,255,255,0.04);
+  --cf-field-border: rgba(255,255,255,0.1);
+  --cf-btn-border: rgba(255,255,255,0.15);
+  --cf-btn-bg: rgba(255,255,255,0.06);
+  --cf-check-border: rgba(255,255,255,0.28);
+  --cf-summary-bg: rgba(255,255,255,0.03);
+  --cf-summary-border: rgba(255,255,255,0.08);
+  --cf-scheme: dark;
+}
+
+[data-theme="light"] {
+  --cf-card-bg: #ffffff;
+  --cf-card-border: rgba(15,23,42,0.12);
+  --cf-field-bg: #ffffff;
+  --cf-field-border: rgba(15,23,42,0.25);
+  --cf-btn-border: rgba(15,23,42,0.22);
+  --cf-btn-bg: #ffffff;
+  --cf-check-border: rgba(15,23,42,0.35);
+  --cf-summary-bg: #ffffff;
+  --cf-summary-border: rgba(15,23,42,0.12);
+  --cf-scheme: light;
+}
+
+[data-theme="light"] .nx-sidebar { box-shadow: 1px 0 8px rgba(15,23,42,0.06); }
+[data-theme="light"] .nx-nav-btn { opacity: 1; }
+[data-theme="light"] .nx-main select,
+[data-theme="light"] .nx-main input {
+  box-shadow: 0 1px 2px rgba(15,23,42,0.05);
+}
+[data-theme="light"] .nx-main select:focus,
+[data-theme="light"] .nx-main input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}

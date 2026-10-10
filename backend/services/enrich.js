@@ -1,5 +1,9 @@
+// services/enrich.js
+
 const dns = require("dns").promises;
 const net = require("net");
+
+const FETCH_TIMEOUT_MS = 10000;
 
 const isPrivateIp = (ip) => {
   if (net.isIPv4(ip)) {
@@ -43,7 +47,8 @@ async function safeUrl(raw) {
   return u;
 }
 
-async function fetchHtml(raw, hops = 3) {
+// meta (optional object) receives meta.finalUrl = the URL after redirects.
+async function fetchHtml(raw, hops = 3, meta = {}) {
   let url = raw;
   for (let i = 0; i <= hops; i++) {
     const u = await safeUrl(url);
@@ -51,7 +56,7 @@ async function fetchHtml(raw, hops = 3) {
 
     const res = await fetch(u, {
       redirect: "manual",
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
         "User-Agent": "LeadFlowBot/1.0 (business contact lookup)",
         Accept: "text/html",
@@ -70,6 +75,8 @@ async function fetchHtml(raw, hops = 3) {
       !(res.headers.get("content-type") || "").includes("text/html")
     )
       return "";
+
+    meta.finalUrl = u.toString();
 
     const reader = res.body.getReader();
     const chunks = [];
@@ -117,12 +124,59 @@ const SOCIAL = {
     /https?:\/\/(?:[a-z]{2,3}\.)?linkedin\.com\/(?:company|in)\/[A-Za-z0-9\-_%]+/i,
 };
 
+// Helper: check if URL is http (no SSL)
+function isHttpOnly(url) {
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+// Helper: basic mobile-friendly check (viewport meta tag)
+function hasViewportMeta(html) {
+  return /<meta[^>]+viewport[^>]*>/i.test(html);
+}
+
+// Helper: very rough content thickness check
+function isThinContent(html) {
+  // remove scripts and styles first so their code is not counted as words
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .toLowerCase();
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  return words.length < 150;
+}
+
 async function enrichWebsite(website) {
-  const out = { emails: [], instagram: "", facebook: "", linkedin: "" };
+  const out = {
+    emails: [],
+    phones: [],
+    instagram: "",
+    facebook: "",
+    linkedin: "",
+    websiteStatus: website ? "basic_ok" : "no_website",
+    websiteIssues: [],
+    websiteStrengths: [],
+    auditScore: 0,
+    problem_summary: "",
+  };
+
   if (!website) return out;
 
-  const home = await fetchHtml(website);
-  if (!home) return out;
+  const meta = {};
+  const home = await fetchHtml(website, 3, meta);
+
+  if (!home) {
+    out.websiteStatus = "broken";
+    out.websiteIssues = [
+      "Website could not be loaded (down, blocked or very slow)",
+    ];
+    return out;
+  }
 
   let html = home;
   const link = home.match(/href=["']([^"']*(?:contact|about)[^"']*)["']/i);
@@ -132,15 +186,68 @@ async function enrichWebsite(website) {
       if (next.hostname === new URL(website).hostname)
         html += "\n" + (await fetchHtml(next.toString()));
     } catch {
-      /* bad link, skip it */
+      /* bad link, skip */
     }
   }
 
   out.emails = extractEmails(html).slice(0, 3);
+  out.phones = [
+    ...new Set(
+      [...html.matchAll(/href=["']tel:([^"']+)/gi)]
+        .map((m) => safeDecode(m[1]).replace(/[^\d+]/g, ""))
+        .filter((p) => p.length >= 10),
+    ),
+  ].slice(0, 3);
+
   for (const [key, rx] of Object.entries(SOCIAL)) {
     const m = html.match(rx);
     if (m) out[key] = m[0].replace(/[/.]+$/, "");
   }
+
+  const issues = [];
+  const strengths = [];
+  const finalUrl = meta.finalUrl || website;
+
+  if (isHttpOnly(finalUrl)) issues.push("Website is not secure (no HTTPS)");
+  else strengths.push("Uses HTTPS");
+
+  if (!hasViewportMeta(home))
+    issues.push("Not mobile-friendly (no mobile viewport setting)");
+  else strengths.push("Mobile viewport set");
+
+  const title = (home.match(/<title[^>]*>\s*([^<]*)/i) || [])[1] || "";
+  if (!title.trim()) issues.push("Missing page title (hurts Google ranking)");
+
+  if (!/<meta[^>]+name=["']description["']/i.test(home))
+    issues.push("No meta description (weak SEO)");
+
+  if (!/href=["'](?:tel:|mailto:)|wa\.me|api\.whatsapp\.com|<form/i.test(home))
+    issues.push("No call, email, WhatsApp or enquiry form for visitors");
+
+  const yearMatch = home.match(
+    /(?:©|&copy;|copyright)[^0-9]{0,30}(?:\d{4}\s*(?:-|–|&ndash;)\s*)?(20\d{2})/i,
+  );
+  if (yearMatch && Number(yearMatch[1]) <= new Date().getFullYear() - 2)
+    issues.push(`Looks outdated (footer shows © ${yearMatch[1]})`);
+
+  if (isThinContent(home))
+    issues.push("Very little content (looks like a placeholder site)");
+
+  out.websiteIssues = issues;
+  out.websiteStrengths = strengths;
+  out.auditScore = Math.max(0, 100 - issues.length * 15);
+  out.websiteStatus =
+    issues.length >= 4
+      ? "needs_redesign"
+      : issues.length > 0
+        ? "needs_improvement"
+        : "basic_ok";
+
+  if (!issues.length) {
+    out.problem_summary =
+      "Website looks technically fine, but design, speed and SEO improvements could still bring more enquiries.";
+  }
+
   return out;
 }
 

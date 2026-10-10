@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../../api";
 import AppSidebar from "./AppSidebar";
 import AppTopbar from "./AppTopbar";
+import AppToast from "../AppToast";
+import LeadCard from "./LeadCard";
 import "./Dashboard.css";
 
 const COUNTRIES = [
@@ -82,68 +85,127 @@ const CATEGORIES = [
   "Factory / Manufacturer",
 ];
 
-const RADII = [
-  [3000, "3 km (small area)"],
-  [8000, "8 km (whole city)"],
-  [15000, "15 km"],
-  [25000, "25 km (large city)"],
-];
-
 function exportToCSV(rows, filename) {
   const cols = [
-    "Name", "Address", "Phone", "Email", "Website",
-    "Instagram", "Facebook", "LinkedIn", "Score", "Category", "City", "Maps URL",
+    "Name",
+    "Address",
+    "Phone",
+    "Email",
+    "Website",
+    "Website Status",
+    "Website Issues",
+    "Opportunity Summary",
+    "Instagram",
+    "Facebook",
+    "LinkedIn",
+    "Score",
+    "Category",
+    "City",
+    "Maps URL",
   ];
+
   const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
   const lines = [
     cols.join(","),
     ...rows.map((p) =>
       [
-        p.name, p.address, p.phone,
+        p.name,
+        p.address,
+        p.phone,
         p.emails?.[0] ?? p.email ?? "",
-        p.website, p.instagram, p.facebook, p.linkedin,
+        p.website,
+        p.websiteStatus ?? "",
+        (p.websiteIssues || []).join(" | "),
+        p.problem_summary ?? "",
+        p.instagram,
+        p.facebook,
+        p.linkedin,
         p.aiScore ?? p.score ?? "",
-        p.category ?? "", p.city ?? "", p.mapsUrl ?? "",
+        p.category ?? "",
+        p.city ?? "",
+        p.mapsUrl ?? "",
       ]
         .map(escape)
         .join(","),
     ),
   ];
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+
+  const blob = new Blob([lines.join("\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename;
+  a.download = filename.endsWith(".csv") ? filename : `${filename}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-const linkStyle = { color: "#4dabf7" };
+/* ─────────────────────────────────────────────
+   THEME-AWARE STYLES
+   Colours come from CSS variables (--cf-*) defined in Dashboard.css,
+   so they switch automatically between light and dark theme.
+───────────────────────────────────────────── */
+
 const selectStyle = {
   width: "100%",
   padding: "12px 14px",
   borderRadius: 10,
   fontSize: 14,
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  color: "var(--text, #e8eaff)",
-  colorScheme: "dark",
+  background: "var(--cf-field-bg)",
+  border: "1.5px solid var(--cf-field-border)",
+  color: "var(--text)",
+  colorScheme: "var(--cf-scheme)",
 };
 
-const host = (u) => {
-  try {
-    return new URL(u).hostname.replace(/^www\./, "");
-  } catch {
-    return "Website";
-  }
+const fieldLabel = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: 0.6,
+  textTransform: "uppercase",
+  color: "var(--text-label)",
+  marginBottom: 7,
 };
-// Opens Google Maps by business name/address
-const mapLink = (p) =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address || p.name)}`;
-const googleFor = (p, city, extra) =>
-  `https://www.google.com/search?q=${encodeURIComponent([p.name, city, extra].filter(Boolean).join(" "))}`;
 
-/* ---------- small components ---------- */
+const inputStyle = {
+  ...selectStyle,
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const LEAD_TYPE_HINTS = {
+  all: "Every business found, each with its own website status and issues.",
+  no_website: "Only businesses with no website listed on Google Maps.",
+  has_website: "Only businesses that have a website, with its audit results.",
+};
+
+function Field({ icon, label, children, hint, span }) {
+  return (
+    <div style={{ gridColumn: span ? "1 / -1" : undefined, minWidth: 0 }}>
+      <div style={fieldLabel}>
+        <span>{icon}</span>
+        {label}
+      </div>
+      {children}
+      {hint && (
+        <div
+          style={{
+            fontSize: 12,
+            color: "var(--text-muted)",
+            marginTop: 6,
+            lineHeight: 1.5,
+          }}
+        >
+          {hint}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Check({ checked, disabled, onChange, label }) {
   return (
@@ -172,10 +234,10 @@ function Check({ checked, disabled, onChange, label }) {
         opacity: disabled ? 0.35 : 1,
         border: checked
           ? "1px solid #4da3ff"
-          : "1px solid rgba(255,255,255,0.28)",
+          : "1.5px solid var(--cf-check-border)",
         background: checked
           ? "linear-gradient(135deg,#4da3ff,#7b8cff)"
-          : "rgba(255,255,255,0.04)",
+          : "var(--cf-field-bg)",
       }}
     >
       {checked ? "✓" : ""}
@@ -183,204 +245,16 @@ function Check({ checked, disabled, onChange, label }) {
   );
 }
 
-function Chip({ ok, label, text, href }) {
-  const base = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 5,
-    padding: "4px 10px",
-    borderRadius: 99,
-    fontSize: 12,
-  };
-  if (!ok) {
-    return (
-      <span
-        style={{
-          ...base,
-          background: "rgba(255,255,255,0.04)",
-          color: "var(--text-muted)",
-        }}
-      >
-        ✗ {label}
-      </span>
-    );
-  }
-  const style = {
-    ...base,
-    background: "rgba(47,158,68,0.16)",
-    color: "#51cf66",
-    textDecoration: "none",
-  };
-  return href ? (
-    <a href={href} target="_blank" rel="noopener noreferrer" style={style}>
-      ✓ {text || label}
-    </a>
-  ) : (
-    <span style={style}>✓ {text || label}</span>
-  );
-}
-
-function Contacts({ p, city }) {
-  const email = p.emails?.[0];
-  return (
-    <>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-        <Chip
-          ok={!!p.phone}
-          label="Phone"
-          text={p.phone}
-          href={p.phone ? `tel:${p.phone.replace(/[^\d+]/g, "")}` : ""}
-        />
-        <Chip
-          ok={!!email}
-          label="Email"
-          text={email}
-          href={email ? `mailto:${email}` : ""}
-        />
-        <Chip
-          ok={!!p.website}
-          label="Website"
-          text={p.website ? host(p.website) : ""}
-          href={p.website}
-        />
-        <Chip ok={!!p.instagram} label="Instagram" href={p.instagram} />
-        <Chip ok={!!p.facebook} label="Facebook" href={p.facebook} />
-        <Chip ok={!!p.linkedin} label="LinkedIn" href={p.linkedin} />
-        <a
-          href={mapLink(p)}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "4px 10px",
-            borderRadius: 99,
-            fontSize: 12,
-            background: "rgba(77,171,247,0.14)",
-            color: "#4dabf7",
-            textDecoration: "none",
-          }}
-        >
-          📍 Google Map
-        </a>
-      </div>
-
-      {(!p.phone ||
-        !email ||
-        !p.website ||
-        !p.instagram ||
-        !p.facebook ||
-        !p.linkedin) && (
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
-          Find manually:{" "}
-          {(!p.phone || !email || !p.website) && (
-            <>
-              <a
-                href={googleFor(p, city, "contact phone email")}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={linkStyle}
-              >
-                Google
-              </a>
-              {" · "}
-            </>
-          )}
-          {!p.instagram && (
-            <>
-              <a
-                href={googleFor(p, city, "site:instagram.com")}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={linkStyle}
-              >
-                Instagram
-              </a>
-              {" · "}
-            </>
-          )}
-          {!p.facebook && (
-            <>
-              <a
-                href={googleFor(p, city, "site:facebook.com")}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={linkStyle}
-              >
-                Facebook
-              </a>
-              {" · "}
-            </>
-          )}
-          {!p.linkedin && (
-            <a
-              href={googleFor(p, city, "site:linkedin.com")}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={linkStyle}
-            >
-              LinkedIn
-            </a>
-          )}
-        </div>
-      )}
-    </>
-  );
-}
-
-function ScoreBadge({ value }) {
-  const v = value ?? 0;
-  const bg =
-    v >= 70
-      ? "linear-gradient(135deg,#51cf66,#2f9e44)"
-      : v >= 40
-        ? "linear-gradient(135deg,#ffd43b,#e67700)"
-        : "linear-gradient(135deg,#ff6b6b,#e03131)";
-  return (
-    <div style={{ textAlign: "center", minWidth: 56, flexShrink: 0 }}>
-      <div
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: "50%",
-          display: "grid",
-          placeItems: "center",
-          fontWeight: 700,
-          fontSize: 15,
-          color: "#fff",
-          background: bg,
-        }}
-      >
-        {value ?? "-"}
-      </div>
-      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3 }}>
-        Score
-      </div>
-    </div>
-  );
-}
-
-const banner = (kind) => ({
-  background: kind === "err" ? "rgba(224,49,49,0.1)" : "rgba(47,158,68,0.12)",
-  border: `1px solid ${kind === "err" ? "rgba(224,49,49,0.2)" : "rgba(47,158,68,0.3)"}`,
-  borderRadius: 10,
-  padding: "12px 16px",
-  marginBottom: 16,
-  fontSize: 13,
-  color: kind === "err" ? "#ff6b6b" : "#51cf66",
-});
-
 const tabBtn = (active) => ({
   padding: "9px 18px",
   borderRadius: 10,
   fontWeight: 600,
   fontSize: 13,
   cursor: "pointer",
-  border: "1px solid rgba(255,255,255,0.1)",
+  border: active ? "1px solid transparent" : "1px solid var(--cf-btn-border)",
   background: active
     ? "linear-gradient(135deg,#4da3ff,#7b8cff)"
-    : "transparent",
+    : "var(--cf-btn-bg)",
   color: active ? "#fff" : "var(--text-sub)",
 });
 
@@ -389,19 +263,144 @@ const quickBtn = (on) => ({
   borderRadius: 99,
   fontSize: 12,
   cursor: "pointer",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: on ? "rgba(77,163,255,0.2)" : "transparent",
-  color: on ? "#7fb8ff" : "var(--text-sub)",
+  border: on
+    ? "1px solid rgba(77,163,255,0.5)"
+    : "1px solid var(--cf-btn-border)",
+  background: on ? "rgba(77,163,255,0.2)" : "var(--cf-btn-bg)",
+  color: on ? "var(--cf-quick-on)" : "var(--text-sub)",
 });
 
-/* ---------- main page ---------- */
+const exportBtnStyle = {
+  padding: "9px 16px",
+  borderRadius: 10,
+  fontWeight: 600,
+  fontSize: 13,
+  cursor: "pointer",
+  border: "1px solid var(--cf-btn-border)",
+  background: "var(--cf-btn-bg)",
+  color: "var(--text-sub)",
+};
+
+/* ─────────────────────────────────────────────
+   SEARCH POPUP (self-contained: no external CSS needed)
+   Rendered in document.body, so it always covers the whole screen.
+───────────────────────────────────────────── */
+function SearchingPopup() {
+  return createPortal(
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="Searching businesses"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 99999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        background: "var(--cf-overlay, rgba(10,14,39,0.5))",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        cursor: "wait",
+      }}
+    >
+      <style>{`
+        @keyframes cfSpin { to { transform: rotate(360deg); } }
+        @keyframes cfOrbit {
+          from { transform: rotate(0deg) translateX(11px) rotate(0deg); }
+          to   { transform: rotate(360deg) translateX(11px) rotate(-360deg); }
+        }
+        @keyframes cfPop {
+          from { opacity: 0; transform: scale(0.94) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 400,
+          textAlign: "center",
+          padding: "34px 28px 30px",
+          borderRadius: 20,
+          background: "var(--cf-modal-bg, var(--bg-sidebar, #fff))",
+          border: "1px solid var(--cf-card-border)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+          animation: "cfPop 0.25s ease",
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            width: 84,
+            height: 84,
+            margin: "0 auto 18px",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              border: "3px solid rgba(116,143,252,0.2)",
+              borderTopColor: "#4dabf7",
+              animation: "cfSpin 1.2s linear infinite",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
+            <span
+              style={{
+                display: "block",
+                fontSize: 30,
+                lineHeight: 1,
+                animation: "cfOrbit 1.8s linear infinite",
+              }}
+            >
+              🔍
+            </span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            fontSize: 17,
+            fontWeight: 700,
+            color: "var(--text)",
+            marginBottom: 8,
+          }}
+        >
+          Searching and auditing...
+        </div>
+
+        <div
+          style={{
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: "var(--text-muted)",
+          }}
+        >
+          Finding businesses and checking their websites. This can take 30-60
+          seconds, please keep this page open.
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 export default function ClientFinder() {
-  const [tab, setTab] = useState("find"); // tabs: find | saved
+  const [tab, setTab] = useState("find");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  // Find tab
   const [form, setForm] = useState({
     country: "in",
     city: "",
@@ -409,15 +408,27 @@ export default function ClientFinder() {
     customCat: "",
     radius: 8000,
     limit: 10,
-    onlyPhone: false,
-    onlyWebsite: false,
+
+    // all | no_website | has_website
+    leadType: "all",
+
     offer: "",
   });
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const set = (key, value) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
   const category =
     form.catChoice === "__other" ? form.customCat.trim() : form.catChoice;
 
-  const [lastSearch, setLastSearch] = useState({ category: "", city: "" });
+  const [lastSearch, setLastSearch] = useState({
+    category: "",
+    city: "",
+    country: "in",
+    offer: "",
+  });
+
   const [leads, setLeads] = useState([]);
   const [picked, setPicked] = useState([]);
   const [quick, setQuick] = useState({ email: false, social: false });
@@ -425,7 +436,6 @@ export default function ClientFinder() {
   const [saving, setSaving] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  // Saved tab
   const [prospects, setProspects] = useState([]);
   const [savedLoading, setSavedLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
@@ -433,39 +443,50 @@ export default function ClientFinder() {
   const visible = useMemo(
     () =>
       leads.filter(
-        (l) =>
-          (!quick.email || l.emails?.length) &&
-          (!quick.social || l.instagram || l.facebook || l.linkedin),
+        (lead) =>
+          (!quick.email || lead.emails?.length) &&
+          (!quick.social || lead.instagram || lead.facebook || lead.linkedin),
       ),
     [leads, quick],
   );
-  const selectable = visible.filter((l) => !l.alreadySaved);
+
+  const selectable = visible.filter((lead) => !lead.alreadySaved);
+
   const allOn =
     selectable.length > 0 &&
-    selectable.every((l) => picked.includes(l.placeId));
+    selectable.every((lead) => picked.includes(lead.placeId));
 
   const cover = useMemo(
     () => ({
       total: leads.length,
-      phone: leads.filter((l) => l.phone).length,
-      email: leads.filter((l) => l.emails?.length).length,
-      website: leads.filter((l) => l.website).length,
-      social: leads.filter((l) => l.instagram || l.facebook || l.linkedin)
-        .length,
+      phone: leads.filter((lead) => lead.phone).length,
+      email: leads.filter((lead) => lead.emails?.length).length,
+      website: leads.filter((lead) => lead.website).length,
+      social: leads.filter(
+        (lead) => lead.instagram || lead.facebook || lead.linkedin,
+      ).length,
     }),
     [leads],
   );
 
-  const switchTab = (t) => {
-    setTab(t);
+  const switchTab = (nextTab) => {
+    setTab(nextTab);
     setError("");
     setNotice("");
   };
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (category.length < 2) return setError("Please select or enter a business type");
-    if (form.city.trim().length < 2) return setError("Please enter a city name");
+
+    if (category.length < 2) {
+      setError("Please select or enter a business type");
+      return;
+    }
+
+    if (form.city.trim().length < 2) {
+      setError("Please enter a city name");
+      return;
+    }
 
     setError("");
     setNotice("");
@@ -474,6 +495,7 @@ export default function ClientFinder() {
     setQuick({ email: false, social: false });
     setLoading(true);
     setSearched(true);
+
     try {
       const data = await api("/finder/search", {
         method: "POST",
@@ -484,16 +506,25 @@ export default function ClientFinder() {
           country: form.country,
           radius: Number(form.radius),
           limit: Number(form.limit),
-          onlyPhone: form.onlyPhone,
-          onlyWebsite: form.onlyWebsite,
+
+          leadType: form.leadType,
         },
       });
-      setLastSearch({ category, city: form.city.trim() });
+
+      setLastSearch({
+        category,
+        city: form.city.trim(),
+        country: form.country,
+        offer: form.offer.trim(),
+      });
+
       setLeads(data.leads || []);
-      if (!data.leads?.length)
+
+      if (!data.leads?.length) {
         setError(
-          "No businesses found. Try expanding the search area, removing filters, or changing the city.",
+          "No matching businesses found. Try a different city, category, or lead type.",
         );
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -501,12 +532,21 @@ export default function ClientFinder() {
     }
   };
 
-  const toggle = (id) =>
-    setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const toggle = (id) => {
+    setPicked((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id],
+    );
+  };
+
   const toggleAll = () => {
-    const ids = selectable.map((l) => l.placeId);
-    setPicked((p) =>
-      allOn ? p.filter((x) => !ids.includes(x)) : [...new Set([...p, ...ids])],
+    const ids = selectable.map((lead) => lead.placeId);
+
+    setPicked((current) =>
+      allOn
+        ? current.filter((id) => !ids.includes(id))
+        : [...new Set([...current, ...ids])],
     );
   };
 
@@ -514,8 +554,10 @@ export default function ClientFinder() {
     setSaving(true);
     setError("");
     setNotice("");
+
     try {
-      const chosen = leads.filter((l) => picked.includes(l.placeId));
+      const chosen = leads.filter((lead) => picked.includes(lead.placeId));
+
       const data = await api("/finder/save", {
         method: "POST",
         body: {
@@ -524,14 +566,21 @@ export default function ClientFinder() {
           city: lastSearch.city,
         },
       });
-      setLeads((prev) =>
-        prev.map((l) =>
-          picked.includes(l.placeId) ? { ...l, alreadySaved: true } : l,
+
+      setLeads((current) =>
+        current.map((lead) =>
+          picked.includes(lead.placeId)
+            ? { ...lead, alreadySaved: true }
+            : lead,
         ),
       );
+
       setPicked([]);
+
       setNotice(
-        `${data.added} prospect(s) saved${data.skipped ? `, ${data.skipped} already existed` : ""}. Go to the "Saved Prospects" tab to convert them to leads.`,
+        `${data.added} prospect(s) saved${
+          data.skipped ? `, ${data.skipped} already existed` : ""
+        }. Go to the "Saved Prospects" tab to convert them to leads.`,
       );
     } catch (err) {
       setError(err.message);
@@ -540,27 +589,55 @@ export default function ClientFinder() {
     }
   };
 
+  // Lock page scroll while the search popup is open
   useEffect(() => {
-    if (tab !== "saved") return;
+    if (!loading) return undefined;
+
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    if (tab !== "saved") return undefined;
+
     let alive = true;
     setSavedLoading(true);
+
     api("/finder/prospects?status=saved")
-      .then((d) => alive && setProspects(d.prospects || []))
-      .catch((err) => alive && setError(err.message))
-      .finally(() => alive && setSavedLoading(false));
+      .then((data) => {
+        if (alive) setProspects(data.prospects || []);
+      })
+      .catch((err) => {
+        if (alive) setError(err.message);
+      })
+      .finally(() => {
+        if (alive) setSavedLoading(false);
+      });
+
     return () => {
       alive = false;
     };
   }, [tab]);
 
-  const convert = async (p) => {
-    setBusyId(p._id);
+  const convert = async (prospect) => {
+    setBusyId(prospect._id);
     setError("");
     setNotice("");
+
     try {
-      await api(`/finder/prospects/${p._id}/convert`, { method: "POST" });
-      setProspects((prev) => prev.filter((x) => x._id !== p._id));
-      setNotice(`"${p.name}" has been added to your Leads list (status: new).`);
+      await api(`/finder/prospects/${prospect._id}/convert`, {
+        method: "POST",
+      });
+
+      setProspects((current) =>
+        current.filter((item) => item._id !== prospect._id),
+      );
+
+      setNotice(`"${prospect.name}" has been added to your Leads list.`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -568,14 +645,21 @@ export default function ClientFinder() {
     }
   };
 
-  const removeProspect = async (p) => {
-    if (!window.confirm(`Remove "${p.name}"?`)) return;
-    setBusyId(p._id);
+  const removeProspect = async (prospect) => {
+    if (!window.confirm(`Remove "${prospect.name}"?`)) return;
+
+    setBusyId(prospect._id);
     setError("");
     setNotice("");
+
     try {
-      await api(`/finder/prospects/${p._id}`, { method: "DELETE" });
-      setProspects((prev) => prev.filter((x) => x._id !== p._id));
+      await api(`/finder/prospects/${prospect._id}`, {
+        method: "DELETE",
+      });
+
+      setProspects((current) =>
+        current.filter((item) => item._id !== prospect._id),
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -586,14 +670,17 @@ export default function ClientFinder() {
   return (
     <div className="nx-shell">
       <AppSidebar />
+
       <div className="nx-body">
         <AppTopbar />
+
         <main className="nx-main">
           <div className="nx-page-header">
             <div>
               <h1 className="nx-page-title">Client Finder</h1>
               <p className="nx-page-sub">
-                Find potential clients, shortlist them, then convert to leads
+                Find website opportunities, audit them, and convert the best
+                prospects into leads.
               </p>
             </div>
           </div>
@@ -606,6 +693,7 @@ export default function ClientFinder() {
             >
               🔍 Find
             </button>
+
             <button
               type="button"
               style={tabBtn(tab === "saved")}
@@ -615,17 +703,57 @@ export default function ClientFinder() {
             </button>
           </div>
 
-          {error && <div style={banner("err")}>{error}</div>}
-          {notice && <div style={banner("ok")}>{notice}</div>}
+          <AppToast message={error} type="error" onClose={() => setError("")} />
+          <AppToast
+            message={notice}
+            type="success"
+            onClose={() => setNotice("")}
+          />
 
-          {/* ================= FIND ================= */}
           {tab === "find" && (
             <>
-              <div className="nx-add-form" style={{ marginBottom: 24 }}>
+              <div
+                style={{
+                  marginBottom: 24,
+                  padding: 22,
+                  borderRadius: 18,
+                  background: "var(--cf-card-bg)",
+                  border: "1px solid var(--cf-card-border)",
+                  boxShadow: "var(--cf-card-shadow)",
+                }}
+              >
+                <div style={{ marginBottom: 18 }}>
+                  <div
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: "var(--text)",
+                    }}
+                  >
+                    🔎 Find businesses
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "var(--text-muted)",
+                      marginTop: 3,
+                    }}
+                  >
+                    Search Google Maps, audit each website, and get
+                    ready-to-send outreach.
+                  </div>
+                </div>
+
                 <form onSubmit={handleSearch}>
-                  <div className="nx-form-grid">
-                    <div className="nx-field">
-                      <label>Country *</label>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(230px, 1fr))",
+                      gap: 16,
+                    }}
+                  >
+                    <Field icon="🌍" label="Country">
                       <select
                         style={selectStyle}
                         value={form.country}
@@ -636,164 +764,138 @@ export default function ClientFinder() {
                             {name}
                           </option>
                         ))}
+
                         <option value="">Anywhere (no country filter)</option>
                       </select>
-                    </div>
-                    <div className="nx-field">
-                      <label>City *</label>
+                    </Field>
+
+                    <Field icon="📍" label="City">
                       <input
-                        placeholder="e.g. Mumbai, Dubai, London"
+                        style={inputStyle}
+                        placeholder="e.g. Ludhiana, Mumbai, Dubai"
                         value={form.city}
                         onChange={(e) => set("city", e.target.value)}
                         required
                       />
-                    </div>
+                    </Field>
 
-                    <div className="nx-field">
-                      <label>Business Type *</label>
+                    <Field icon="🏢" label="Business type">
                       <select
                         style={selectStyle}
                         value={form.catChoice}
                         onChange={(e) => set("catChoice", e.target.value)}
                       >
-                        {CATEGORIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
+                        {CATEGORIES.map((item) => (
+                          <option key={item} value={item}>
+                            {item}
                           </option>
                         ))}
+
                         <option value="__other">
                           Other (type your own)...
                         </option>
                       </select>
-                    </div>
-                    <div className="nx-field">
-                      <label>Search area</label>
-                      <select
-                        style={selectStyle}
-                        value={form.radius}
-                        onChange={(e) => set("radius", e.target.value)}
-                      >
-                        {RADII.map(([v, t]) => (
-                          <option key={v} value={v}>
-                            {t}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    </Field>
 
                     {form.catChoice === "__other" && (
-                      <div
-                        className="nx-field"
-                        style={{ gridColumn: "span 2" }}
-                      >
-                        <label>Enter business type</label>
+                      <Field icon="✏️" label="Your business type" span>
                         <input
+                          style={inputStyle}
                           placeholder="e.g. Yoga studio, Bank, Courier"
                           value={form.customCat}
                           onChange={(e) => set("customCat", e.target.value)}
                         />
-                      </div>
+                      </Field>
                     )}
 
-                    <div className="nx-field">
-                      <label>Number of results</label>
+                    <Field
+                      icon="🎯"
+                      label="Lead type"
+                      hint={LEAD_TYPE_HINTS[form.leadType]}
+                    >
+                      <select
+                        style={selectStyle}
+                        value={form.leadType}
+                        onChange={(e) => set("leadType", e.target.value)}
+                      >
+                        <option value="all">All opportunities</option>
+                        <option value="no_website">No website only</option>
+                        <option value="has_website">Has website</option>
+                      </select>
+                    </Field>
+
+                    <Field
+                      icon="🔢"
+                      label="Number of results"
+                      hint={
+                        Number(form.limit) >= 50
+                          ? "Bigger searches take longer and use more search credits."
+                          : "10 or 20 is best for quick, accurate results."
+                      }
+                    >
                       <select
                         style={selectStyle}
                         value={form.limit}
                         onChange={(e) => set("limit", e.target.value)}
                       >
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>
-                          50 (may take 30 to 60 seconds)
-                        </option>
-                        <option value={100}>
-                          100 (may take 1 to 2 minutes)
-                        </option>
+                        <option value={10}>10 results</option>
+                        <option value={20}>20 results</option>
+                        <option value={50}>50 results (30-60 sec)</option>
+                        <option value={100}>100 results (1-2 min)</option>
                       </select>
-                    </div>
-                    <div className="nx-field">
-                      <label>Filter in search</label>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 18,
-                          flexWrap: "wrap",
-                          paddingTop: 10,
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            cursor: "pointer",
-                            fontSize: 13,
-                          }}
-                          onClick={() => set("onlyPhone", !form.onlyPhone)}
-                        >
-                          <Check
-                            checked={form.onlyPhone}
-                            onChange={() => set("onlyPhone", !form.onlyPhone)}
-                            label="Phone only"
-                          />
-                          Phone only
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            cursor: "pointer",
-                            fontSize: 13,
-                          }}
-                          onClick={() => set("onlyWebsite", !form.onlyWebsite)}
-                        >
-                          <Check
-                            checked={form.onlyWebsite}
-                            onChange={() =>
-                              set("onlyWebsite", !form.onlyWebsite)
-                            }
-                            label="Website only"
-                          />
-                          Website only
-                        </div>
-                      </div>
-                    </div>
+                    </Field>
 
-                    <div className="nx-field" style={{ gridColumn: "span 2" }}>
-                      <label>Your Service / Offer (optional)</label>
+                    <Field
+                      icon="💼"
+                      label="Your service / offer (optional)"
+                      hint="Used in the suggested outreach message."
+                    >
                       <input
-                        placeholder="e.g. Website design, Digital marketing, SEO services"
+                        style={inputStyle}
+                        placeholder="e.g. Website design, SEO, Digital marketing"
                         value={form.offer}
                         onChange={(e) => set("offer", e.target.value)}
                       />
-                    </div>
+                    </Field>
                   </div>
-                  <button
-                    className="nx-add-btn"
-                    type="submit"
-                    disabled={loading}
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      flexWrap: "wrap",
+                      marginTop: 20,
+                    }}
                   >
-                    {loading ? "Searching..." : "🔍 Find Clients"}
-                  </button>
+                    <button
+                      className="nx-add-btn"
+                      type="submit"
+                      disabled={loading}
+                      style={{ padding: "12px 28px", fontSize: 14 }}
+                    >
+                      {loading
+                        ? "Searching and auditing..."
+                        : "🔍 Find Clients"}
+                    </button>
+
+                    <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      Results come from Google Maps. Always verify details
+                      before outreach.
+                    </span>
+                  </div>
                 </form>
               </div>
 
-              {loading && (
-                <div className="nx-empty-state">
-                  <div className="nx-empty-icon">🔍</div>
-                  <p>Searching for businesses... (may take 10–25 seconds)</p>
-                </div>
-              )}
+              {loading && <SearchingPopup />}
 
               {!loading && leads.length > 0 && (
                 <>
-                  {/* coverage summary */}
                   <div
                     style={{
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "var(--cf-summary-bg)",
+                      border: "1px solid var(--cf-summary-border)",
+                      boxShadow: "var(--cf-card-shadow)",
                       borderRadius: 10,
                       padding: "12px 16px",
                       marginBottom: 14,
@@ -801,21 +903,33 @@ export default function ClientFinder() {
                       color: "var(--text-sub)",
                     }}
                   >
-                    <b>{cover.total} businesses found.</b> Contacts available:{" "}
-                    📞 {cover.phone}/{cover.total} · ✉️ {cover.email}/
-                    {cover.total} · 🌐 {cover.website}/{cover.total} · 🔗 social{" "}
-                    {cover.social}/{cover.total}
+                    <b>{cover.total} opportunities found.</b> Contacts
+                    available: 📞 {cover.phone}/{cover.total} · ✉️ {cover.email}
+                    /{cover.total} · 🌐 {cover.website}/{cover.total} · 🔗
+                    social {cover.social}/{cover.total}
                     <div
                       style={{
-                        fontSize: 11,
+                        fontSize: 12,
                         color: "var(--text-muted)",
-                        marginTop: 4,
+                        marginTop: 5,
                       }}
                     >
-                      Free data (OpenStreetMap) often lacks contact details. Use
-                      the "Find manually" links on each card for missing info.
+                      Results match your selected lead type, sorted by
+                      opportunity score.
                     </div>
                   </div>
+
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-muted)",
+                      marginTop: 8,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Open "Suggested message" on a card to see a ready-to-send
+                    outreach message based on the issues found.
+                  </p>
 
                   <div
                     style={{
@@ -836,31 +950,48 @@ export default function ClientFinder() {
                       }}
                     >
                       <span
-                        style={{ fontSize: 12, color: "var(--text-muted)" }}
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-muted)",
+                        }}
                       >
                         Filter results:
                       </span>
+
                       <button
                         type="button"
                         style={quickBtn(quick.email)}
                         onClick={() =>
-                          setQuick((q) => ({ ...q, email: !q.email }))
+                          setQuick((current) => ({
+                            ...current,
+                            email: !current.email,
+                          }))
                         }
                       >
                         ✉️ Has email
                       </button>
+
                       <button
                         type="button"
                         style={quickBtn(quick.social)}
                         onClick={() =>
-                          setQuick((q) => ({ ...q, social: !q.social }))
+                          setQuick((current) => ({
+                            ...current,
+                            social: !current.social,
+                          }))
                         }
                       >
                         🔗 Has social
                       </button>
                     </div>
+
                     <div
-                      style={{ display: "flex", alignItems: "center", gap: 14 }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        flexWrap: "wrap",
+                      }}
                     >
                       <div
                         style={{
@@ -869,7 +1000,7 @@ export default function ClientFinder() {
                           gap: 8,
                           fontSize: 13,
                           color: "var(--text-sub)",
-                          cursor: "pointer",
+                          cursor: selectable.length ? "pointer" : "not-allowed",
                         }}
                         onClick={() => selectable.length && toggleAll()}
                       >
@@ -881,6 +1012,7 @@ export default function ClientFinder() {
                         />
                         Select all
                       </div>
+
                       <button
                         className="nx-add-btn"
                         type="button"
@@ -891,24 +1023,19 @@ export default function ClientFinder() {
                           ? "Saving..."
                           : `⭐ Save prospects (${picked.length})`}
                       </button>
+
                       <button
                         type="button"
-                        style={{
-                          padding: "9px 16px",
-                          borderRadius: 10,
-                          fontWeight: 600,
-                          fontSize: 13,
-                          cursor: "pointer",
-                          border: "1px solid rgba(255,255,255,0.15)",
-                          background: "rgba(255,255,255,0.06)",
-                          color: "var(--text-sub)",
-                        }}
+                        style={exportBtnStyle}
                         onClick={() =>
                           exportToCSV(
                             visible,
-                            `clients-${lastSearch.city || "search"}-${lastSearch.category || ""}.csv`
+                            `clients-${lastSearch.city || "search"}-${
+                              lastSearch.category || ""
+                            }`
                               .toLowerCase()
-                              .replace(/\s+/g, "-"),
+                              .replace(/[^a-z0-9]+/g, "-")
+                              .replace(/-+$/, ""),
                           )
                         }
                       >
@@ -925,7 +1052,8 @@ export default function ClientFinder() {
                         padding: "16px 0",
                       }}
                     >
-                      No businesses match this filter. Try removing the filter.
+                      No businesses match the quick filter. Remove "Has email"
+                      or "Has social" to view all search results.
                     </div>
                   )}
 
@@ -933,82 +1061,35 @@ export default function ClientFinder() {
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: 10,
+                      gap: 12,
                     }}
                   >
-                    {visible.map((lead, i) => (
-                      <div
-                        key={lead.placeId || i}
-                        className="nx-deal-card"
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "flex-start",
-                          gap: 16,
-                        }}
-                      >
-                        <div style={{ marginTop: 14 }}>
-                          <Check
-                            checked={picked.includes(lead.placeId)}
-                            disabled={lead.alreadySaved}
-                            onChange={() => toggle(lead.placeId)}
-                            label={`Select ${lead.name}`}
-                          />
-                        </div>
-                        <ScoreBadge value={lead.aiScore} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div className="nx-deal-title">
-                            {lead.name}
-                            {lead.alreadySaved && (
-                              <span
-                                style={{
-                                  marginLeft: 8,
-                                  fontSize: 11,
-                                  color: "#51cf66",
-                                  fontWeight: 500,
-                                }}
-                              >
-                                ✓ Saved
-                              </span>
-                            )}
-                          </div>
-                          <div className="nx-deal-stage">{lead.address}</div>
-                          {lead.aiReason && (
-                            <div
-                              style={{
-                                fontSize: 11,
-                                color: "var(--text-muted)",
-                                fontStyle: "italic",
-                                marginTop: 4,
-                              }}
-                            >
-                              {lead.aiReason}
-                            </div>
-                          )}
-                          <Contacts p={lead} city={lastSearch.city} />
-                        </div>
-                      </div>
+                    {visible.map((lead, index) => (
+                      <LeadCard
+                        key={lead.placeId || index}
+                        lead={lead}
+                        city={lastSearch.city}
+                        country={lastSearch.country}
+                        offer={lastSearch.offer}
+                        checked={picked.includes(lead.placeId)}
+                        onToggle={() => toggle(lead.placeId)}
+                        disableCheck={Boolean(lead.alreadySaved)}
+                        savedMark={Boolean(lead.alreadySaved)}
+                      />
                     ))}
                   </div>
 
                   <p
                     style={{
-                      fontSize: 11,
+                      fontSize: 12,
                       color: "var(--text-muted)",
                       marginTop: 16,
                       lineHeight: 1.6,
                     }}
                   >
-                    Score = number of contact methods found. Data ©
-                    OpenStreetMap contributors · Powered by{" "}
-                    <a
-                      href="https://www.geoapify.com/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={linkStyle}
-                    >
-                      Geoapify
-                    </a>
-                    . Please verify details before calling or emailing.
+                    Opportunity score considers website need, detected website
+                    issues, and available contact methods. Always verify contact
+                    details and audit findings before outreach.
                   </p>
                 </>
               )}
@@ -1016,30 +1097,30 @@ export default function ClientFinder() {
               {!loading && searched && leads.length === 0 && !error && (
                 <div className="nx-empty-state">
                   <div className="nx-empty-icon">🏙️</div>
-                  <h2>No results found</h2>
-                  <p>Try expanding the search area or changing the city</p>
+                  <h2>No opportunities found</h2>
+                  <p>Try a different city, category, or lead type.</p>
                 </div>
               )}
 
               {!searched && (
                 <div className="nx-empty-state">
                   <div className="nx-empty-icon">🎯</div>
-                  <h2>Find your potential clients</h2>
+                  <h2>Find website opportunities</h2>
                   <p>
-                    Select a country, city, and business type. Each result will
-                    show which contact details were found and which are missing.
+                    Search a category and city. LeadFlow will identify
+                    businesses without websites or with website improvement
+                    opportunities.
                   </p>
                 </div>
               )}
             </>
           )}
 
-          {/* ================= SAVED ================= */}
           {tab === "saved" && (
             <>
               {savedLoading && (
                 <div className="nx-empty-state">
-                  <p>Loading...</p>
+                  <p>Loading saved prospects...</p>
                 </div>
               )}
 
@@ -1048,15 +1129,19 @@ export default function ClientFinder() {
                   <div className="nx-empty-icon">⭐</div>
                   <h2>No saved prospects yet</h2>
                   <p>
-                    Go to the Find tab, search for businesses, and click "Save
-                    prospects"
+                    Search for website opportunities and save the prospects you
+                    want to contact.
                   </p>
                 </div>
               )}
 
               {!savedLoading && prospects.length > 0 && (
                 <div
-                  style={{ display: "flex", flexDirection: "column", gap: 10 }}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                  }}
                 >
                   <div
                     style={{
@@ -1067,16 +1152,7 @@ export default function ClientFinder() {
                   >
                     <button
                       type="button"
-                      style={{
-                        padding: "9px 16px",
-                        borderRadius: 10,
-                        fontWeight: 600,
-                        fontSize: 13,
-                        cursor: "pointer",
-                        border: "1px solid rgba(255,255,255,0.15)",
-                        background: "rgba(255,255,255,0.06)",
-                        color: "var(--text-sub)",
-                      }}
+                      style={exportBtnStyle}
                       onClick={() =>
                         exportToCSV(prospects, "saved-prospects.csv")
                       }
@@ -1084,66 +1160,44 @@ export default function ClientFinder() {
                       ⬇️ Export CSV ({prospects.length})
                     </button>
                   </div>
-                  {prospects.map((p) => (
-                    <div
-                      key={p._id}
-                      className="nx-deal-card"
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "flex-start",
-                        gap: 16,
-                      }}
-                    >
-                      <ScoreBadge value={p.score} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div className="nx-deal-title">{p.name}</div>
-                        <div className="nx-deal-stage">{p.address}</div>
-                        {(p.category || p.city) && (
-                          <div
+
+                  {prospects.map((prospect) => (
+                    <LeadCard
+                      key={prospect._id}
+                      lead={prospect}
+                      city={prospect.city}
+                      country={lastSearch.country || form.country}
+                      offer={lastSearch.offer || form.offer}
+                      actions={
+                        <>
+                          <button
+                            className="nx-add-btn"
+                            type="button"
+                            disabled={busyId === prospect._id}
+                            onClick={() => convert(prospect)}
+                          >
+                            {busyId === prospect._id
+                              ? "..."
+                              : "→ Convert to Lead"}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={busyId === prospect._id}
+                            onClick={() => removeProspect(prospect)}
                             style={{
-                              fontSize: 11,
-                              color: "var(--text-muted)",
-                              marginTop: 4,
+                              background: "none",
+                              border: 0,
+                              color: "var(--cf-danger)",
+                              cursor: "pointer",
+                              fontSize: 12,
                             }}
                           >
-                            Search:{" "}
-                            {[p.category, p.city].filter(Boolean).join(" · ")}
-                          </div>
-                        )}
-                        <Contacts p={p} city={p.city} />
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 8,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <button
-                          className="nx-add-btn"
-                          type="button"
-                          disabled={busyId === p._id}
-                          onClick={() => convert(p)}
-                        >
-                          {busyId === p._id ? "..." : "→ Convert to Lead"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busyId === p._id}
-                          onClick={() => removeProspect(p)}
-                          style={{
-                            background: "none",
-                            border: 0,
-                            color: "#ff8a8a",
-                            cursor: "pointer",
-                            fontSize: 12,
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
+                            Remove
+                          </button>
+                        </>
+                      }
+                    />
                   ))}
                 </div>
               )}
