@@ -11,11 +11,22 @@ router.use(protect, requireActive); // is file ke saare routes login maangte hai
 const FIELDS = [
   "name",
   "email",
+  "workEmail",
   "phone",
   "company",
+  "linkedinId",
+  "instagramId",
+  "facebookId",
+  "twitterId",
+  "websiteUrl",
+  "problemNote",
+  "conversionStartDate",
   "source",
+  "stage",
+  "stageNote",
   "status",
-  "value",
+  "dealAmount",
+  "dealCurrency",
   "followUpDate",
 ];
 const pick = (obj = {}) =>
@@ -52,7 +63,7 @@ router.get("/stats/summary", async (req, res) => {
         $group: {
           _id: "$status",
           count: { $sum: 1 },
-          value: { $sum: "$value" },
+          value: { $sum: "$dealAmount" },
         },
       },
     ]),

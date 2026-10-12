@@ -114,7 +114,7 @@ export default function Dashboard() {
   }, [loadFiltered]);
 
   // --- COMPUTED STATS from allLeads ---
-  const totalValue = allLeads.reduce((s, l) => s + (l.value || 0), 0);
+  const totalValue = allLeads.reduce((s, l) => s + (l.dealAmount || 0), 0);
   const wonLeads = allLeads.filter((l) => l.status === "won");
   const winRate = allLeads.length
     ? Math.round((wonLeads.length / allLeads.length) * 100)
@@ -133,7 +133,7 @@ export default function Dashboard() {
   // pipeline stages grouped
   const pipelineStages = STAGE_ORDER.slice(0, 3).map((st) => {
     const stLeads = allLeads.filter((l) => l.status === st);
-    const stValue = stLeads.reduce((s, l) => s + (l.value || 0), 0);
+    const stValue = stLeads.reduce((s, l) => s + (l.dealAmount || 0), 0);
     return { status: st, name: STAGE_MAP[st], value: stValue, leads: stLeads };
   });
 
@@ -141,7 +141,7 @@ export default function Dashboard() {
   const monthlyData = Array(12).fill(0);
   allLeads.forEach((l) => {
     const m = new Date(l.createdAt).getMonth();
-    monthlyData[m] += l.value || 0;
+    monthlyData[m] += l.dealAmount || 0;
   });
   const maxMonthVal = Math.max(...monthlyData, 1);
 
@@ -410,9 +410,9 @@ export default function Dashboard() {
                                 Company: <span>{lead.company}</span>
                               </div>
                             )}
-                            {lead.value > 0 && (
+                            {lead.dealAmount > 0 && (
                               <div className="nx-deal-amount">
-                                {fmt(lead.value)}
+                                {fmt(lead.dealAmount)}
                               </div>
                             )}
                             <div className="nx-deal-meta">
@@ -611,7 +611,7 @@ export default function Dashboard() {
                     ).length;
                     const val = allLeads
                       .filter((l) => l.status === st)
-                      .reduce((s, l) => s + (l.value || 0), 0);
+                      .reduce((s, l) => s + (l.dealAmount || 0), 0);
                     if (count === 0) return null;
                     return (
                       <div key={st} className="nx-intel-item">
@@ -752,7 +752,7 @@ export default function Dashboard() {
                           <td>{l.name}</td>
                           <td>{l.company || "-"}</td>
                           <td>{l.phone || "-"}</td>
-                          <td>{l.value > 0 ? fmt(l.value) : "-"}</td>
+                          <td>{l.dealAmount > 0 ? fmt(l.dealAmount) : "-"}</td>
                           <td>
                             <span className={`nx-pill nx-pill-${l.status}`}>
                               {STAGE_MAP[l.status]}
