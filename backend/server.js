@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 
 const connectDB = require("./config/db");
+const { startLeadReminderCron } = require("./utils/leadReminder");
 const authRoutes = require("./routes/authRoutes");
 const leadRoutes = require("./routes/leadRoutes");
 const finderRoutes = require("./routes/finderRoutes");
@@ -16,6 +17,7 @@ const app = express();
 app.set("trust proxy", 1);
 
 connectDB();
+startLeadReminderCron();
 
 // ---------- CORS ----------
 // Allowed origins: ALLOWED_ORIGINS (comma separated) + CLIENT_URL (purana variable bhi chalega)
