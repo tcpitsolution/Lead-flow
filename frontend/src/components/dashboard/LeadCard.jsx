@@ -104,8 +104,8 @@ export function getInsight(lead = {}) {
   const seo = num(ps.seo);
   const acc = num(ps.accessibility);
 
-  const issues = (lead.websiteIssues || [])
-    .map((i) => (typeof i === "string" ? i : i?.message || i?.title || ""))
+  const issues = (Array.isArray(lead.websiteIssues) ? lead.websiteIssues : [])
+    .map((i) => (typeof i === "string" ? i : String(i?.message || i?.title || "")))
     .filter(Boolean);
 
   const used = new Set();
@@ -114,7 +114,7 @@ export function getInsight(lead = {}) {
   const add = (key, label, note, regex) => {
     const hits = regex
       ? issues
-          .map((t, idx) => (regex.test(t) ? idx : -1))
+          .map((t, idx) => (typeof t === "string" && regex.test(t) ? idx : -1))
           .filter((idx) => idx >= 0)
       : [];
 
