@@ -419,10 +419,10 @@ export default function Dashboard() {
                               <div
                                 className="nx-deal-avatar"
                                 style={{
-                                  background: getAvatarColor(lead.name),
+                                  background: getAvatarColor(lead.name || "?"),
                                 }}
                               >
-                                {lead.name[0].toUpperCase()}
+                                {(lead.name || "?")[0].toUpperCase()}
                               </div>
                               <div className="nx-deal-info">
                                 {lead.phone && (
