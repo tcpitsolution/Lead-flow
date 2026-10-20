@@ -38,8 +38,8 @@ const userSchema = new mongoose.Schema(
       minlength: [8, "Password kam se kam 8 akshar ka ho"],
       select: false,
     },
-        isVerified: { type: Boolean, default: false },
-        role: { type: String, enum: ["user", "admin"], default: "user" },
+    isVerified: { type: Boolean, default: false },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     trialEndsAt: { type: Date },
     paidUntil: { type: Date },
     isBlocked: { type: Boolean, default: false },
@@ -48,6 +48,8 @@ const userSchema = new mongoose.Schema(
     lastLoginAt: { type: Date },
     lastSeenAt: { type: Date },
     loginCount: { type: Number, default: 0 },
+
+    lastReminderAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
