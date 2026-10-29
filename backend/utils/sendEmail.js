@@ -1,11 +1,18 @@
 const nodemailer = require("nodemailer");
+const emailjs = require("@emailjs/nodejs");
 
 const escapeHtml = (s) =>
   String(s).replace(
     /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
   );
 
+// ---------------------------------------------------------------
+// OTP mail (pehle jaisa hi, koi badlav nahi)
+// ---------------------------------------------------------------
 const createTransporter = () =>
   nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -45,28 +52,48 @@ const sendOtpEmail = async (to, name, code, purpose) => {
   });
 };
 
-const sendLeadReminderEmail = async (to, userName, leads) => {
-  const safeUser = escapeHtml(userName);
-  const leadListHtml = leads
-    .map((l) => `<li style="margin:4px 0">${escapeHtml(l.name || "Unnamed Lead")}</li>`)
+// ---------------------------------------------------------------
+// Lead reminder mail (EmailJS se)
+// ---------------------------------------------------------------
+const MAX_SHOWN = 15; // mail mein zyada se zyada itni leads dikhengi
+
+const rowStyle =
+  "padding:13px 0;border-bottom:1px solid #E3E7EE;" +
+  "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;" +
+  "font-size:15px;color:#14213D;";
+
+const sendLeadReminderEmail = async (toEmail, name, leads) => {
+  const shown = leads.slice(0, MAX_SHOWN);
+  const extra = leads.length - shown.length;
+
+  let leadList = shown
+    .map((l) => `<tr><td style="${rowStyle}">${escapeHtml(l.name)}</td></tr>`)
     .join("");
 
-  await createTransporter().sendMail({
-    from: process.env.MAIL_FROM,
-    to,
-    subject: `⏰ Reminder: Your ${leads.length} lead(s) are waiting - LeadFlow`,
-    text: `Hi ${userName}, reminder: your leads are waiting!\n\nTotal Leads: ${leads.length}\n\nLeads:\n${leads.map((l) => `- ${l.name || "Unnamed Lead"}`).join("\n")}\n\nLogin to LeadFlow and follow up now!`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px">
-        <h2 style="margin:0 0 8px">LeadFlow 🔔</h2>
-        <p>Hi ${safeUser},</p>
-        <p style="font-size:16px"><strong>Reminder: Your leads are waiting!</strong></p>
-        <p>You have <strong>${leads.length} pending lead(s)</strong> that need your attention:</p>
-        <ul style="padding-left:20px">${leadListHtml}</ul>
-        <p style="margin-top:20px;color:#555">Login to LeadFlow and follow up with your leads now. Don't let them go cold! 🚀</p>
-        <a href="${process.env.CLIENT_URL || 'https://leadflowcrm.site'}" style="display:inline-block;margin-top:16px;padding:10px 20px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">Open LeadFlow</a>
-      </div>`,
-  });
+  if (extra > 0) {
+    leadList += `<tr><td style="${rowStyle}color:#0B7A75;font-weight:600;">+ ${extra} more leads in your dashboard</td></tr>`;
+  }
+
+  try {
+    await emailjs.send(
+      process.env.EMAILJS_SERVICE_ID,
+      process.env.EMAILJS_TEMPLATE_ID,
+      {
+        to_email: toEmail,
+        to_name: name,
+        lead_count: leads.length,
+        lead_list: leadList,
+        dashboard_url: "https://leadflowcrm.site",
+      },
+      {
+        publicKey: process.env.EMAILJS_PUBLIC_KEY,
+        privateKey: process.env.EMAILJS_PRIVATE_KEY,
+      },
+    );
+  } catch (err) {
+    // EmailJS ke error mein asli wajah err.text mein hoti hai
+    throw new Error(err.text || err.message || "EmailJS send failed");
+  }
 };
 
 module.exports = { sendOtpEmail, sendLeadReminderEmail };
