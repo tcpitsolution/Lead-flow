@@ -1,32 +1,23 @@
-const nodemailer = require("nodemailer");
 const emailjs = require("@emailjs/nodejs");
 
 const escapeHtml = (s) =>
   String(s).replace(
     /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
 
-// ---------------------------------------------------------------
-// OTP mail (pehle jaisa hi, koi badlav nahi)
-// ---------------------------------------------------------------
-const createTransporter = () =>
-  nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: false,
-    family: 4,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+const emailjsAuth = () => ({
+  publicKey: process.env.EMAILJS_PUBLIC_KEY,
+  privateKey: process.env.EMAILJS_PRIVATE_KEY,
+});
 
+// EmailJS ke error mein asli wajah err.text mein hoti hai
+const wrapError = (err) =>
+  new Error(err.text || err.message || "EmailJS send failed");
+
+// ---------------------------------------------------------------
+// OTP mail
+// ---------------------------------------------------------------
 const sendOtpEmail = async (to, name, code, purpose) => {
   const minutes = process.env.OTP_EXPIRES_MIN || 10;
   const title =
@@ -35,27 +26,30 @@ const sendOtpEmail = async (to, name, code, purpose) => {
       : purpose === "email-change"
         ? "Verify your email change"
         : "Verify your login";
-  const safeName = escapeHtml(name);
 
-  await createTransporter().sendMail({
-    from: process.env.MAIL_FROM,
-    to,
-    subject: `${code} - LeadFlow ${title}`,
-    text: `Hi ${name}, your LeadFlow OTP is ${code}. It is valid for ${minutes} minutes. Do not share it with anyone.`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:24px">
-        <h2 style="margin:0 0 8px">LeadFlow</h2>
-        <p>Hi ${safeName}, enter this code to ${title.toLowerCase()}:</p>
-        <p style="font-size:34px;letter-spacing:8px;font-weight:700;margin:20px 0">${code}</p>
-        <p style="color:#666">This code is valid for ${minutes} minutes. Do not share it with anyone.</p>
-      </div>`,
-  });
+  try {
+    await emailjs.send(
+      process.env.EMAILJS_SERVICE_ID,
+      process.env.EMAILJS_OTP_TEMPLATE_ID,
+      {
+        to_email: to,
+        to_name: name,
+        otp_code: code,
+        title,
+        minutes,
+        subject: `${code} - LeadFlow ${title}`,
+      },
+      emailjsAuth(),
+    );
+  } catch (err) {
+    throw wrapError(err);
+  }
 };
 
 // ---------------------------------------------------------------
-// Lead reminder mail (EmailJS se)
+// Lead reminder mail
 // ---------------------------------------------------------------
-const MAX_SHOWN = 15; // mail mein zyada se zyada itni leads dikhengi
+const MAX_SHOWN = 15;
 
 const rowStyle =
   "padding:13px 0;border-bottom:1px solid #E3E7EE;" +
@@ -85,14 +79,10 @@ const sendLeadReminderEmail = async (toEmail, name, leads) => {
         lead_list: leadList,
         dashboard_url: "https://leadflowcrm.site",
       },
-      {
-        publicKey: process.env.EMAILJS_PUBLIC_KEY,
-        privateKey: process.env.EMAILJS_PRIVATE_KEY,
-      },
+      emailjsAuth(),
     );
   } catch (err) {
-    // EmailJS ke error mein asli wajah err.text mein hoti hai
-    throw new Error(err.text || err.message || "EmailJS send failed");
+    throw wrapError(err);
   }
 };
 
