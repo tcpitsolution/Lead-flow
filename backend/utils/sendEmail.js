@@ -12,8 +12,14 @@ const emailjsAuth = () => ({
 });
 
 // EmailJS ke error mein asli wajah err.text mein hoti hai
-const wrapError = (err) =>
-  new Error(err.text || err.message || "EmailJS send failed");
+const wrapError = (err) => {
+  console.error("[EmailJS] raw error:", err);
+  const msg =
+    typeof err === "string"
+      ? err
+      : err?.text || err?.message || JSON.stringify(err) || "EmailJS send failed";
+  return new Error(`EmailJS: ${msg}`);
+};
 
 // ---------------------------------------------------------------
 // OTP mail
