@@ -1,53 +1,84 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import "./PublicPage.css";
+
+const BRAND = "Leadflowcrm";
+const EMAIL = "leadflowcrm.support@gmail.com";
+const UPDATED = "November 4, 2026";
+
+const sections = [
+  {
+    h: "1. Free Trial",
+    p: [
+      `${BRAND} gives every new user a free 14-day trial so you can try the service before paying.`,
+    ],
+  },
+  {
+    h: "2. Refund Window",
+    p: ["Refund requests must be made within 7 days of the payment."],
+  },
+  {
+    h: "3. When You Are Eligible for a Refund",
+    p: [
+      "Payment cancelled or failed: if your payment was cancelled, failed with an error, or the amount was deducted but the order did not complete, the amount is refunded to you.",
+      "Duplicate payment: if you were charged more than once for the same plan, the extra amount is refunded.",
+      "Plan not activated: if your payment succeeded but your plan was not activated due to a technical issue and we cannot fix it, we will refund the amount.",
+    ],
+  },
+  {
+    h: "4. Refund Timeline",
+    p: [
+      "Approved refunds are returned to your original payment method within 5 to 7 working days. Failed or cancelled payments are usually returned automatically by your bank or payment provider within the same period. The exact time can vary with your bank.",
+    ],
+  },
+  {
+    h: "5. If You Do Not Receive Your Money",
+    p: [
+      `If the amount has not reached you after 7 working days, email us at ${EMAIL} with your registered email address and the payment ID or a screenshot of the payment, and we will look into it.`,
+    ],
+  },
+  {
+    h: "6. Cancellation",
+    p: [
+      "You can stop using the service at any time. Your plan stays active until the end of the period you paid for. We do not charge you again automatically; you pay only when you choose to buy a plan.",
+    ],
+  },
+  {
+    h: "7. Contact",
+    p: [`For any refund or cancellation question, write to ${EMAIL}.`],
+  },
+];
 
 export default function Refund() {
+  useEffect(() => {
+    document.title = `Refund & Cancellation Policy | ${BRAND}`;
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
-    <div className="pub-page">
-      <div className="pub-hero">
-        <span className="pub-tag">LEGAL</span>
-        <h1 className="pub-hero-title">Refund &amp; <span className="pub-accent">Cancellation</span></h1>
-        <p className="pub-hero-sub">Last updated: {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</p>
-      </div>
+    <div
+      style={{
+        maxWidth: 820,
+        margin: "0 auto",
+        padding: "32px 16px 64px",
+        lineHeight: 1.7,
+      }}
+    >
+      <Link to="/">← Back to {BRAND}</Link>
+      <h1 style={{ marginTop: 16 }}>Refund & Cancellation Policy</h1>
+      <p style={{ opacity: 0.7 }}>Last updated: {UPDATED}</p>
 
-      <div className="pub-section" style={{ maxWidth: 760 }}>
-        <div className="legal-body">
+      {sections.map((s) => (
+        <section key={s.h} style={{ marginTop: 24 }}>
+          <h2 style={{ fontSize: 18 }}>{s.h}</h2>
+          {s.p.map((t, i) => (
+            <p key={i}>{t}</p>
+          ))}
+        </section>
+      ))}
 
-          <h2>1. Subscription Plans</h2>
-          <p>LeadFlow CRM offers paid subscription plans as listed on the Pricing page. Payments are made via UPI and activated manually by our admin team after verification.</p>
-
-          <h2>2. Refund Policy</h2>
-          <p>We offer a <strong>7-day refund window</strong> from the date of payment activation. If you are not satisfied with the Service, you may request a full refund within this period.</p>
-          <p>Refunds will <strong>not</strong> be issued in the following cases:</p>
-          <ul>
-            <li>Refund request made after 7 days of activation.</li>
-            <li>Account suspended due to violation of Terms &amp; Conditions.</li>
-            <li>Partial use of the subscription period beyond 7 days.</li>
-          </ul>
-
-          <h2>3. How to Request a Refund</h2>
-          <p>To request a refund, email us at <a href="mailto:leadflowcrm.support@gmail.com">leadflowcrm.support@gmail.com</a> with:</p>
-          <ul>
-            <li>Your registered email address.</li>
-            <li>UTR / transaction number of your payment.</li>
-            <li>Reason for the refund request.</li>
-          </ul>
-          <p>We will process approved refunds within <strong>5–7 business days</strong> to the original payment method.</p>
-
-          <h2>4. Cancellation</h2>
-          <p>You may cancel your subscription at any time from your account settings. Cancellation stops future renewals but does not entitle you to a refund for the current billing period unless within the 7-day window.</p>
-
-          <h2>5. Plan Downgrades</h2>
-          <p>If you downgrade your plan, the change takes effect at the end of your current billing cycle. No partial refunds are issued for downgrades.</p>
-
-          <h2>6. Contact</h2>
-          <p>For any refund or cancellation queries, contact us at <a href="mailto:leadflowcrm.support@gmail.com">leadflowcrm.support@gmail.com</a>.</p>
-        </div>
-
-        <div style={{ marginTop: 40 }}>
-          <Link to="/" className="pub-btn-secondary">← Back to Home</Link>
-        </div>
-      </div>
+      <p style={{ marginTop: 32 }}>
+        Contact: <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+      </p>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import Hero from "../../components/public/Hero";
+import Features from "../../components/public/Features";
 import SEO from "../../components/SEO";
 import { Helmet } from "react-helmet-async";
 
@@ -43,6 +44,7 @@ const Home = () => {
         <script type="application/ld+json">{JSON.stringify(LD_SOFTWARE)}</script>
       </Helmet>
       <Hero />
+      <Features />
     </div>
   );
 };

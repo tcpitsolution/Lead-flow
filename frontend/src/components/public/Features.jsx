@@ -3,34 +3,34 @@ import styles from './Features.module.css'
 
 const features = [
   {
-    icon: '🎯',
-    title: 'Smart Lead Scoring',
-    desc: 'Automatically score and prioritize leads based on engagement, behavior, and fit.',
+    icon: '🔍',
+    title: 'AI Client Finder',
+    desc: 'Search any city and business type — LeadFlow finds real businesses from Google Maps, audits their websites, and gives you ready-to-send outreach messages.',
+  },
+  {
+    icon: '📋',
+    title: 'Lead Management',
+    desc: 'Add leads with name, company, phone, email, and deal value. Move them through pipeline stages — Prospecting, Qualification, Proposal, Won, or Lost.',
   },
   {
     icon: '📅',
     title: 'Follow-up Reminders',
-    desc: 'Never miss a follow-up. Set smart reminders and let the system keep you on track.',
+    desc: 'Set a follow-up date on any lead and never miss a callback. Your dashboard shows overdue and upcoming follow-ups at a glance.',
+  },
+  {
+    icon: '🏢',
+    title: 'Companies & Activities',
+    desc: 'Organise leads by company and log every call, meeting, or note as an activity so your entire history is always in one place.',
+  },
+  {
+    icon: '✅',
+    title: 'Tasks',
+    desc: 'Create tasks linked to your leads and mark them done as you go. Stay on top of every action item without switching tools.',
   },
   {
     icon: '📊',
-    title: 'Pipeline Analytics',
-    desc: 'Visualize your entire sales pipeline with real-time charts and conversion metrics.',
-  },
-  {
-    icon: '🤝',
-    title: 'Meeting Scheduler',
-    desc: 'Schedule and manage client meetings directly from your CRM dashboard.',
-  },
-  {
-    icon: '📧',
-    title: 'Email Integration',
-    desc: 'Sync your inbox and track email opens, clicks, and replies automatically.',
-  },
-  {
-    icon: '🔒',
-    title: 'Role-based Access',
-    desc: 'Control who sees what with granular permissions for your entire team.',
+    title: 'Pipeline & Analytics',
+    desc: 'See your pipeline value, win rate, and monthly revenue forecast in a live dashboard built from your actual lead data — no fake numbers.',
   },
 ]
 
@@ -39,9 +39,9 @@ export default function Features() {
     <section className={styles.section}>
       <div className={styles.header} data-animate>
         <span className={styles.tag}>Features</span>
-        <h2 className={styles.title}>Everything you need to close deals faster</h2>
+        <h2 className={styles.title}>What you get with LeadFlow</h2>
         <p className={styles.subtitle}>
-          A complete toolkit for modern sales teams — from first contact to closed deal.
+          Every tool you need to find clients, track leads, and close more deals.
         </p>
       </div>
       <div className={styles.grid}>

@@ -14,9 +14,10 @@ import Home from "../src/pages/public/Home";
 import Features from "./pages/public/Features";
 import Pricing from "./pages/public/Pricing";
 import AdminPanel from "./components/dashboard/AdminPanel";
-import Testimonials from "./pages/public/Testimonials";
-import Blogs from "./pages/public/Blogs";
 import Contact from "./pages/public/Contact";
+import Terms from "./pages/public/Terms";
+import Privacy from "./pages/public/Privacy";
+import Refund from "./pages/public/Refund";
 import Login from "./pages/public/Login";
 import Signup from "./pages/public/Signup";
 import Dashboard from "./components/dashboard/Dashboard";
@@ -33,11 +34,13 @@ function AnimationInit() {
 }
 
 const DASHBOARD_ROUTES = ["/dashboard"];
+const LEGAL_ROUTES = ["/terms", "/privacy", "/refund"];
 
 function Layout({ children }) {
   const { pathname } = useLocation();
   const { theme, applyTheme } = useTheme();
   const isDashboard = DASHBOARD_ROUTES.some((r) => pathname.startsWith(r));
+  const isLegal = LEGAL_ROUTES.includes(pathname);
 
   useEffect(() => {
     applyTheme(theme, isDashboard);
@@ -51,9 +54,9 @@ function Layout({ children }) {
           <meta name="robots" content="noindex,nofollow" />
         </Helmet>
       )}
-      {!isDashboard && <Navbar />}
+      {!isDashboard && !isLegal && <Navbar />}
       {children}
-      {!isDashboard && <Footer />}
+      {!isDashboard && !isLegal && <Footer />}
     </div>
   );
 }
@@ -67,9 +70,10 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/features" element={<Features />} />
             <Route path="/pricing" element={<Pricing />} />
-            <Route path="/testimonials" element={<Testimonials />} />
-            <Route path="/blogs" element={<Blogs />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund" element={<Refund />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route

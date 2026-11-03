@@ -4,8 +4,6 @@ import DashboardLayout from '../layouts/DashboardLayout'
 import Home from '../pages/public/Home'
 import FeaturesPage from '../pages/public/Features'
 import PricingPage from '../pages/public/Pricing'
-import TestimonialsPage from '../pages/public/Testimonials'
-import BlogsPage from '../pages/public/Blogs'
 import ContactPage from '../pages/public/Contact'
 import TermsPage from '../pages/public/Terms'
 import PrivacyPage from '../pages/public/Privacy'
@@ -32,8 +30,6 @@ export default function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/testimonials" element={<TestimonialsPage />} />
-          <Route path="/blogs" element={<BlogsPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />

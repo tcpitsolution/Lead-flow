@@ -1,8 +1,11 @@
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 export default function useAnimate() {
+  const { pathname } = useLocation();
   useEffect(() => {
     const els = document.querySelectorAll("[data-animate]");
+    els.forEach((el) => el.classList.remove("in-view"));
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
@@ -16,5 +19,5 @@ export default function useAnimate() {
     );
     els.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [pathname]);
 }

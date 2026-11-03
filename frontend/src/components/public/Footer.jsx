@@ -60,9 +60,9 @@ const Footer = () => {
         <div className="footer-bottom-inner">
           <p>© {new Date().getFullYear()} LeadFlow. All rights reserved.</p>
           <div className="footer-legal-links">
-            <Link to="/terms">Terms &amp; Conditions</Link>
-            <Link to="/privacy">Privacy Policy</Link>
-            <Link to="/refund">Refund &amp; Cancellation</Link>
+            <Link to="/terms">Terms</Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/refund">Refund</Link>
           </div>
         </div>
       </div>
