@@ -382,6 +382,15 @@ export default function Leads() {
   };
   const toggleAll = () => setSelected(selected.size === leads.length ? new Set() : new Set(leads.map((l) => l._id)));
 
+  const deleteSelected = async () => {
+    if (!window.confirm(`Delete ${selected.size} selected lead(s)?`)) return;
+    try {
+      await api("/leads/bulk", { method: "DELETE", body: { ids: [...selected] } });
+      setSelected(new Set());
+      load();
+    } catch {}
+  };
+
   const exportExcel = async () => {
     let allLeads = [];
     try {
@@ -433,6 +442,11 @@ export default function Leads() {
               {leads.length > 0 && (
                 <button className="nx-filter-btn" onClick={toggleAll}>
                   {selected.size === leads.length ? "Deselect All" : "Select All"}
+                </button>
+              )}
+              {selected.size > 0 && (
+                <button className="nx-filter-btn" onClick={deleteSelected} style={{ color: "#ff6b6b", borderColor: "rgba(255,107,107,0.4)" }}>
+                  <Trash2 size={13} style={{ marginRight: 4 }} /> Delete ({selected.size})
                 </button>
               )}
               <select className="nx-filter-btn" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>

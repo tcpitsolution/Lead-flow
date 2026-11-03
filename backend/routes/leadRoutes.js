@@ -164,6 +164,15 @@ router.put("/:id", validId, async (req, res) => {
   res.json({ success: true, lead });
 });
 
+router.delete("/bulk", async (req, res) => {
+  const ids = req.body.ids;
+  if (!Array.isArray(ids) || ids.length === 0)
+    return res.status(400).json({ success: false, message: "No IDs provided" });
+  const validIds = ids.filter((id) => mongoose.isValidObjectId(id));
+  const { deletedCount } = await Lead.deleteMany({ _id: { $in: validIds }, owner: req.user._id });
+  res.json({ success: true, deletedCount });
+});
+
 router.delete("/:id", validId, async (req, res) => {
   const lead = await Lead.findOneAndDelete({
     _id: req.params.id,
