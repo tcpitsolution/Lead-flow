@@ -45,9 +45,9 @@ const Footer = () => {
               want to stay organized and close more deals.
             </p>
 
-            <a href="mailto:solutiontcp@gmail.com" className="footer-email">
+            <a href="mailto:leadflowcrm.support@gmail.com" className="footer-email">
               <Mail size={16} />
-              solutiontcp@gmail.com
+              leadflowcrm.support@gmail.com
             </a>
 
 
@@ -58,12 +58,7 @@ const Footer = () => {
       {/* BOTTOM */}
       <div className="footer-bottom">
         <div className="footer-bottom-inner">
-          <p>
-            © {new Date().getFullYear()} LeadFlow. Powered by{" "}
-            <a href="https://tcpitsolution.in" target="_blank" rel="noreferrer" className="footer-powered-link">
-              TCP IT Solution
-            </a>
-          </p>
+          <p>© {new Date().getFullYear()} LeadFlow. All rights reserved.</p>
         </div>
       </div>
     </footer>
