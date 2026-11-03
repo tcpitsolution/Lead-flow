@@ -496,3 +496,49 @@
   .pub-testimonial-card,
   .pub-blog-card { padding: 20px 16px; }
 }
+
+/* ---- Legal pages ---- */
+.legal-body h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 32px 0 10px;
+}
+.legal-body h2:first-child { margin-top: 0; }
+.legal-body p {
+  font-size: 15px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.75;
+  margin: 0 0 12px;
+}
+.legal-body ul {
+  padding-left: 20px;
+  margin: 0 0 12px;
+}
+.legal-body ul li {
+  font-size: 15px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.75;
+  margin-bottom: 6px;
+}
+.legal-body a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.legal-body a:hover { text-decoration: underline; }
+
+/* ---- Footer legal links ---- */
+.footer-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 16px;
+  margin-top: 10px;
+}
+.footer-legal-links a {
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-legal-links a:hover { color: var(--accent); }

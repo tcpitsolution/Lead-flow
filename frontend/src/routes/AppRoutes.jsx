@@ -7,6 +7,9 @@ import PricingPage from '../pages/public/Pricing'
 import TestimonialsPage from '../pages/public/Testimonials'
 import BlogsPage from '../pages/public/Blogs'
 import ContactPage from '../pages/public/Contact'
+import TermsPage from '../pages/public/Terms'
+import PrivacyPage from '../pages/public/Privacy'
+import RefundPage from '../pages/public/Refund'
 import Login from '../components/auth/Login'
 import Signup from '../components/auth/Signup'
 import ForgotPassword from '../components/auth/ForgotPassword'
@@ -32,6 +35,9 @@ export default function AppRoutes() {
           <Route path="/testimonials" element={<TestimonialsPage />} />
           <Route path="/blogs" element={<BlogsPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/refund" element={<RefundPage />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
