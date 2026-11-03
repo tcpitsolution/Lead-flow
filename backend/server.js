@@ -78,4 +78,12 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+
+  // Render free tier spins down after inactivity — self-ping keeps cron alive
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  setInterval(() => {
+    fetch(`${SELF_URL}/`).catch(() => {});
+  }, 10 * 60 * 1000); // every 10 minutes
+});

@@ -6,7 +6,7 @@ const { sendLeadReminderEmail } = require("./sendEmail");
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // India = UTC+5:30
 const SEND_FROM_HOUR = 9; // subah 9 baje se mail bhejna shuru
-const SEND_UNTIL_HOURS = 12; // 9 baje + 12 ghante = raat 9 baje tak
+const SEND_UNTIL_HOURS = 15; // 9 baje + 15 ghante = raat 12 baje (midnight) tak
 
 // Lead model mein "owner" ka asli naam apne aap dhoondho
 const OWNER_FIELD =
