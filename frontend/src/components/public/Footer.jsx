@@ -63,8 +63,6 @@ const Footer = () => {
             <Link to="/terms">Terms &amp; Conditions</Link>
             <Link to="/privacy">Privacy Policy</Link>
             <Link to="/refund">Refund &amp; Cancellation</Link>
-            <Link to="/contact">Contact Us</Link>
-            <Link to="/pricing">Pricing</Link>
           </div>
         </div>
       </div>
