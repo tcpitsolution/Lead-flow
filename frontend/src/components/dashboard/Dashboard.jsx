@@ -81,7 +81,7 @@ export default function Dashboard() {
 
   const loadAll = useCallback(async () => {
     try {
-      const data = await api("/leads?limit=100");
+      const data = await api("/leads?limit=1000&all=true");
       setAllLeads(data.items || []);
     } catch {
       setAllLeads([]);
