@@ -316,6 +316,7 @@ export default function Leads() {
   const [selected, setSelected] = useState(new Set());
   const [showForm, setShowForm] = useState(false);
   const [historyDate, setHistoryDate] = useState(""); // empty = today
+  const [showAll, setShowAll] = useState(false);
   const dateInputRef = useRef(null);
   const [form, setForm] = useState({
     name: "", company: "", phone: "", email: "", workEmail: "",
@@ -335,7 +336,8 @@ export default function Leads() {
       if (search.trim()) q.set("search", search.trim());
       if (statusFilter) q.set("status", statusFilter);
       // pass date: historyDate if set, otherwise today
-      q.set("date", historyDate || todayStr());
+      if (showAll) { q.set("all", "true"); }
+      else { q.set("date", historyDate || todayStr()); }
       const data = await api(`/leads?${q}`);
       setLeads(data.items || []);
       setMeta({ total: data.total, pages: data.pages });
@@ -344,7 +346,7 @@ export default function Leads() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, historyDate]);
+  }, [page, search, statusFilter, historyDate, showAll]);
 
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [load]);
 
@@ -405,7 +407,8 @@ export default function Leads() {
       const q = new URLSearchParams({ limit: 1000 });
       if (search.trim()) q.set("search", search.trim());
       if (statusFilter) q.set("status", statusFilter);
-      q.set("date", historyDate || todayStr());
+      if (showAll) { q.set("all", "true"); }
+      else { q.set("date", historyDate || todayStr()); }
       const data = await api(`/leads?${q}`);
       allLeads = data.items || [];
     } catch { return; }
@@ -446,11 +449,13 @@ export default function Leads() {
             <div>
               <h1 className="nx-page-title">Leads</h1>
               <p className="nx-page-sub">
-                {historyDate
-                  ? <>Showing leads for <strong>{new Date(historyDate + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</strong> · {meta.total} lead(s)
-                    <button onClick={() => { setHistoryDate(""); setPage(1); }} style={{ marginLeft: 8, background: "none", border: "none", color: "#ff6b6b", cursor: "pointer", fontSize: 12 }}>✕ Clear</button>
-                  </>
-                  : `Today · ${meta.total} lead(s)${selected.size > 0 ? ` · ${selected.size} selected` : ""}`
+                {showAll
+                  ? `All leads · ${meta.total} total${selected.size > 0 ? ` · ${selected.size} selected` : ""}`
+                  : historyDate
+                    ? <>Showing leads for <strong>{new Date(historyDate + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</strong> · {meta.total} lead(s)
+                        <button onClick={() => { setHistoryDate(""); setPage(1); }} style={{ marginLeft: 8, background: "none", border: "none", color: "#ff6b6b", cursor: "pointer", fontSize: 12 }}>✕ Clear</button>
+                      </>
+                    : `Today · ${meta.total} lead(s)${selected.size > 0 ? ` · ${selected.size} selected` : ""}`
                 }
               </p>
             </div>
@@ -470,11 +475,18 @@ export default function Leads() {
                 {STATUSES.map((s) => <option key={s} value={s}>{STAGE_MAP[s]}</option>)}
               </select>
               <button className="nx-filter-btn" onClick={exportExcel}>⬇ Export Excel</button>
+              <button
+                className="nx-filter-btn"
+                onClick={() => { setShowAll(!showAll); setHistoryDate(""); setPage(1); }}
+                style={showAll ? { borderColor: "rgba(81,207,102,0.6)", color: "#51cf66" } : {}}
+              >
+                {showAll ? "✕ All Leads" : "All Leads"}
+              </button>
               {/* History date picker */}
               <button
                 className="nx-filter-btn"
-                onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
-                style={historyDate ? { borderColor: "rgba(116,143,252,0.6)", color: "#748ffc" } : {}}
+                onClick={() => { setShowAll(false); dateInputRef.current?.showPicker?.() || dateInputRef.current?.click(); }}
+                style={historyDate && !showAll ? { borderColor: "rgba(116,143,252,0.6)", color: "#748ffc" } : {}}
               >
                 <History size={13} style={{ marginRight: 4 }} /> History
               </button>
@@ -569,8 +581,8 @@ export default function Leads() {
           {!loading && leads.length === 0 && (
             <div className="lc-empty-state">
               <div className="lc-empty-icon"><Building2 size={48} opacity={0.3} /></div>
-              <h2>{historyDate ? "No leads found" : "No leads today"}</h2>
-              <p>{historyDate ? "No leads were added on this date." : 'Click "+ Add Lead" to add your first lead today.'}</p>
+              <h2>{showAll ? "No leads found" : historyDate ? "No leads found" : "No leads today"}</h2>
+              <p>{showAll ? "No leads added yet." : historyDate ? "No leads were added on this date." : 'Click "+ Add Lead" to add your first lead today.'}</p>
             </div>
           )}
 

@@ -123,14 +123,14 @@ router.get("/", async (req, res) => {
     filter.$or = [{ name: rx }, { company: rx }, { email: rx }, { phone: rx }];
   }
 
-  // filter by date (defaults to today)
-  const dateStr = typeof req.query.date === "string" ? req.query.date : "";
-  const targetDate = dateStr ? new Date(dateStr) : new Date();
-  const dayStart = new Date(targetDate);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(targetDate);
-  dayEnd.setHours(23, 59, 59, 999);
-  filter.createdAt = { $gte: dayStart, $lte: dayEnd };
+  // filter by date unless "all=true" is passed
+  if (req.query.all !== "true") {
+    const dateStr = typeof req.query.date === "string" ? req.query.date : "";
+    const targetDate = dateStr ? new Date(dateStr) : new Date();
+    const dayStart = new Date(targetDate); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(targetDate); dayEnd.setHours(23, 59, 59, 999);
+    filter.createdAt = { $gte: dayStart, $lte: dayEnd };
+  }
 
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100);
