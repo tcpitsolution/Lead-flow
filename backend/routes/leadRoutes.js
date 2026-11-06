@@ -109,7 +109,7 @@ router.get("/stats/summary", async (req, res) => {
   });
 });
 
-// list: ?search=&status=&page=1&limit=10
+// list: ?search=&status=&page=1&limit=10&date=YYYY-MM-DD
 router.get("/", async (req, res) => {
   const filter = { owner: req.user._id };
 
@@ -122,6 +122,15 @@ router.get("/", async (req, res) => {
     const rx = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     filter.$or = [{ name: rx }, { company: rx }, { email: rx }, { phone: rx }];
   }
+
+  // filter by date (defaults to today)
+  const dateStr = typeof req.query.date === "string" ? req.query.date : "";
+  const targetDate = dateStr ? new Date(dateStr) : new Date();
+  const dayStart = new Date(targetDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(targetDate);
+  dayEnd.setHours(23, 59, 59, 999);
+  filter.createdAt = { $gte: dayStart, $lte: dayEnd };
 
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100);

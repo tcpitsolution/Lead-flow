@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { Phone, Mail, Globe, MessageCircle, Building2, Trash2, ChevronDown } from "lucide-react";
+import { Phone, Mail, Globe, MessageCircle, Building2, Trash2, ChevronDown, History } from "lucide-react";
 
 const Instagram = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -301,6 +301,10 @@ function LeadCard({ lead, checked, onToggle, onDelete, onStatusChange, onEdit })
   );
 }
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 /* ── Main Page ── */
 export default function Leads() {
   const [leads, setLeads] = useState([]);
@@ -311,6 +315,8 @@ export default function Leads() {
   const [meta, setMeta] = useState({ total: 0, pages: 1 });
   const [selected, setSelected] = useState(new Set());
   const [showForm, setShowForm] = useState(false);
+  const [historyDate, setHistoryDate] = useState(""); // empty = today
+  const dateInputRef = useRef(null);
   const [form, setForm] = useState({
     name: "", company: "", phone: "", email: "", workEmail: "",
     linkedinId: "", instagramId: "", facebookId: "", twitterId: "",
@@ -328,6 +334,8 @@ export default function Leads() {
       const q = new URLSearchParams({ page, limit: 15 });
       if (search.trim()) q.set("search", search.trim());
       if (statusFilter) q.set("status", statusFilter);
+      // pass date: historyDate if set, otherwise today
+      q.set("date", historyDate || todayStr());
       const data = await api(`/leads?${q}`);
       setLeads(data.items || []);
       setMeta({ total: data.total, pages: data.pages });
@@ -336,7 +344,7 @@ export default function Leads() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, historyDate]);
 
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [load]);
 
@@ -397,6 +405,7 @@ export default function Leads() {
       const q = new URLSearchParams({ limit: 1000 });
       if (search.trim()) q.set("search", search.trim());
       if (statusFilter) q.set("status", statusFilter);
+      q.set("date", historyDate || todayStr());
       const data = await api(`/leads?${q}`);
       allLeads = data.items || [];
     } catch { return; }
@@ -436,7 +445,14 @@ export default function Leads() {
           <div className="nx-page-header">
             <div>
               <h1 className="nx-page-title">Leads</h1>
-              <p className="nx-page-sub">{meta.total} total leads{selected.size > 0 && ` · ${selected.size} selected`}</p>
+              <p className="nx-page-sub">
+                {historyDate
+                  ? <>Showing leads for <strong>{new Date(historyDate + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</strong> · {meta.total} lead(s)
+                    <button onClick={() => { setHistoryDate(""); setPage(1); }} style={{ marginLeft: 8, background: "none", border: "none", color: "#ff6b6b", cursor: "pointer", fontSize: 12 }}>✕ Clear</button>
+                  </>
+                  : `Today · ${meta.total} lead(s)${selected.size > 0 ? ` · ${selected.size} selected` : ""}`
+                }
+              </p>
             </div>
             <div className="nx-page-actions">
               {leads.length > 0 && (
@@ -454,6 +470,22 @@ export default function Leads() {
                 {STATUSES.map((s) => <option key={s} value={s}>{STAGE_MAP[s]}</option>)}
               </select>
               <button className="nx-filter-btn" onClick={exportExcel}>⬇ Export Excel</button>
+              {/* History date picker */}
+              <button
+                className="nx-filter-btn"
+                onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
+                style={historyDate ? { borderColor: "rgba(116,143,252,0.6)", color: "#748ffc" } : {}}
+              >
+                <History size={13} style={{ marginRight: 4 }} /> History
+              </button>
+              <input
+                ref={dateInputRef}
+                type="date"
+                max={todayStr()}
+                value={historyDate}
+                onChange={(e) => { setHistoryDate(e.target.value); setPage(1); }}
+                style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }}
+              />
               <button className="nx-add-btn" onClick={() => setShowForm(!showForm)}>
                 {showForm ? "✕ Cancel" : "+ Add Lead"}
               </button>
@@ -537,8 +569,8 @@ export default function Leads() {
           {!loading && leads.length === 0 && (
             <div className="lc-empty-state">
               <div className="lc-empty-icon"><Building2 size={48} opacity={0.3} /></div>
-              <h2>No leads yet</h2>
-              <p>Click "+ Add Lead" to add your first lead.</p>
+              <h2>{historyDate ? "No leads found" : "No leads today"}</h2>
+              <p>{historyDate ? "No leads were added on this date." : 'Click "+ Add Lead" to add your first lead today.'}</p>
             </div>
           )}
 
